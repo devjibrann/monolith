@@ -1,0 +1,29 @@
+# Environment and secrets (never commit)
+.env
+.env.*
+!.env.example
+backend/.env
+backend/config/master.key
+frontend/.env.local
+
+# Dependencies and build output
+node_modules/
+frontend/node_modules/
+frontend/.next/
+backend/vendor/bundle/
+backend/tmp/
+backend/log/
+backend/storage/
+
+# Python
+ai-service/__pycache__/
+ai-service/.venv/
+*.pyc
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Docker volumes (local)
+postgres_data/

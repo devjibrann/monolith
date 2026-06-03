@@ -1,0 +1,54 @@
+{
+  "family": "monlith-sidekiq",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/monlith-ecs-task",
+  "containerDefinitions": [
+    {
+      "name": "sidekiq",
+      "image": "ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/monlith-backend:latest",
+      "essential": true,
+      "command": ["bundle", "exec", "sidekiq"],
+      "environment": [
+        { "name": "RAILS_ENV", "value": "production" }
+      ],
+      "secrets": [
+        {
+          "name": "RAILS_MASTER_KEY",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:monlith/production:RAILS_MASTER_KEY::"
+        },
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:monlith/production:DATABASE_URL::"
+        },
+        {
+          "name": "REDIS_URL",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:monlith/production:REDIS_URL::"
+        },
+        {
+          "name": "DEVISE_JWT_SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:monlith/production:DEVISE_JWT_SECRET_KEY::"
+        },
+        {
+          "name": "AI_SERVICE_URL",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:monlith/production:AI_SERVICE_URL::"
+        },
+        {
+          "name": "AI_SERVICE_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:monlith/production:AI_SERVICE_SECRET::"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/monlith-sidekiq",
+          "awslogs-region": "REGION",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

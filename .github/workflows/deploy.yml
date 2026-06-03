@@ -1,0 +1,141 @@
+# Build production images, push to ECR, and roll ECS services.
+# Prerequisites: docs/deploy.md (OIDC role, ECR repos, ECS cluster/services, Secrets Manager).
+
+name: Deploy to ECS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+  ECR_REPOSITORY_BACKEND: ${{ vars.ECR_REPOSITORY_BACKEND }}
+  ECR_REPOSITORY_FRONTEND: ${{ vars.ECR_REPOSITORY_FRONTEND }}
+  ECR_REPOSITORY_AI: ${{ vars.ECR_REPOSITORY_AI }}
+  ECS_SERVICE_BACKEND: ${{ vars.ECS_SERVICE_BACKEND }}
+  ECS_SERVICE_SIDEKIQ: ${{ vars.ECS_SERVICE_SIDEKIQ }}
+  ECS_SERVICE_FRONTEND: ${{ vars.ECS_SERVICE_FRONTEND }}
+  ECS_SERVICE_AI: ${{ vars.ECS_SERVICE_AI }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate deployment configuration
+        run: |
+          missing=0
+          check() { if [ -z "$1" ]; then echo "::error::$2 is not set. See docs/deploy.md"; missing=1; fi; }
+          check "${{ vars.AWS_REGION }}" "Variable AWS_REGION"
+          check "${{ vars.ECS_CLUSTER }}" "Variable ECS_CLUSTER"
+          check "${{ vars.ECR_REPOSITORY_BACKEND }}" "Variable ECR_REPOSITORY_BACKEND"
+          check "${{ vars.ECR_REPOSITORY_FRONTEND }}" "Variable ECR_REPOSITORY_FRONTEND"
+          check "${{ vars.ECR_REPOSITORY_AI }}" "Variable ECR_REPOSITORY_AI"
+          check "${{ vars.ECS_SERVICE_BACKEND }}" "Variable ECS_SERVICE_BACKEND"
+          check "${{ vars.ECS_SERVICE_SIDEKIQ }}" "Variable ECS_SERVICE_SIDEKIQ"
+          check "${{ vars.ECS_SERVICE_FRONTEND }}" "Variable ECS_SERVICE_FRONTEND"
+          check "${{ vars.ECS_SERVICE_AI }}" "Variable ECS_SERVICE_AI"
+          check "${{ secrets.AWS_ROLE_ARN }}" "Secret AWS_ROLE_ARN"
+          check "${{ secrets.NEXT_PUBLIC_API_URL }}" "Secret NEXT_PUBLIC_API_URL"
+          exit $missing
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      - name: Build and push backend (Sidekiq uses this image)
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          REPOSITORY: ${{ env.ECR_REPOSITORY_BACKEND }}
+        run: |
+          IMAGE="${REGISTRY}/${REPOSITORY}"
+          docker build -f infra/docker/backend.prod.Dockerfile -t "${IMAGE}:${IMAGE_TAG}" -t "${IMAGE}:latest" .
+          docker push "${IMAGE}:${IMAGE_TAG}"
+          docker push "${IMAGE}:latest"
+          echo "BACKEND_IMAGE=${IMAGE}:${IMAGE_TAG}" >> "$GITHUB_ENV"
+
+      - name: Build and push frontend
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          REPOSITORY: ${{ env.ECR_REPOSITORY_FRONTEND }}
+        run: |
+          IMAGE="${REGISTRY}/${REPOSITORY}"
+          docker build -f infra/docker/frontend.prod.Dockerfile \
+            --build-arg NEXT_PUBLIC_API_URL="${{ secrets.NEXT_PUBLIC_API_URL }}" \
+            -t "${IMAGE}:${IMAGE_TAG}" -t "${IMAGE}:latest" .
+          docker push "${IMAGE}:${IMAGE_TAG}"
+          docker push "${IMAGE}:latest"
+          echo "FRONTEND_IMAGE=${IMAGE}:${IMAGE_TAG}" >> "$GITHUB_ENV"
+
+      - name: Build and push ai-service
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          REPOSITORY: ${{ env.ECR_REPOSITORY_AI }}
+        run: |
+          IMAGE="${REGISTRY}/${REPOSITORY}"
+          docker build -f infra/docker/ai-service.prod.Dockerfile -t "${IMAGE}:${IMAGE_TAG}" -t "${IMAGE}:latest" .
+          docker push "${IMAGE}:${IMAGE_TAG}"
+          docker push "${IMAGE}:latest"
+          echo "AI_IMAGE=${IMAGE}:${IMAGE_TAG}" >> "$GITHUB_ENV"
+
+      - name: Deploy backend service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: infra/ecs/task-definition.backend.json
+          service: ${{ env.ECS_SERVICE_BACKEND }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          container-name: backend
+          image: ${{ env.BACKEND_IMAGE }}
+          wait-for-service-stability: true
+
+      - name: Deploy Sidekiq service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: infra/ecs/task-definition.sidekiq.json
+          service: ${{ env.ECS_SERVICE_SIDEKIQ }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          container-name: sidekiq
+          image: ${{ env.BACKEND_IMAGE }}
+          wait-for-service-stability: true
+
+      - name: Deploy frontend service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: infra/ecs/task-definition.frontend.json
+          service: ${{ env.ECS_SERVICE_FRONTEND }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          container-name: frontend
+          image: ${{ env.FRONTEND_IMAGE }}
+          wait-for-service-stability: true
+
+      - name: Deploy ai-service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: infra/ecs/task-definition.ai-service.json
+          service: ${{ env.ECS_SERVICE_AI }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          container-name: ai-service
+          image: ${{ env.AI_IMAGE }}
+          wait-for-service-stability: true
