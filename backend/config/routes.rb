@@ -23,7 +23,11 @@ Rails.application.routes.draw do
           }
       end
 
-      resources :organizations
+      resources :organizations do
+        collection do
+          get :hierarchy
+        end
+      end
       resources :memberships
       resources :documents, only: [:index, :show, :create, :destroy]
       resources :chats, only: [:index, :create]

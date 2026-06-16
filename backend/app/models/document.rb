@@ -15,6 +15,16 @@ class Document < ApplicationRecord
 
   enum :status, { pending: 0, processing: 1, ready: 2, failed: 3 }
 
+  scope :visible_to, lambda { |user, organization|
+    membership = user.memberships.find_by(organization: organization)
+    scoped = where(organization: organization)
+    if membership&.admin? || membership&.owner?
+      scoped
+    else
+      scoped.where(user_id: user.id)
+    end
+  }
+
   validates :title, presence: true
   validate :file_must_be_attached, on: :create
   validate :acceptable_file_type, on: :create

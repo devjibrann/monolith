@@ -1,15 +1,16 @@
-# Build production images, push to ECR, and roll ECS services.
-# Prerequisites: docs/deploy.md (OIDC role, ECR repos, ECS cluster/services, Secrets Manager).
+# Production pipeline: CI gates, then build images, push to ECR, deploy ECS.
+# Triggers on push to `production` (and manual dispatch).
+# PRs target `production` via ci.yml only.
 
-name: Deploy to ECS
+name: Production Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [production]
   workflow_dispatch:
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: production-deploy
   cancel-in-progress: true
 
 permissions:
@@ -28,9 +29,12 @@ env:
   ECS_SERVICE_AI: ${{ vars.ECS_SERVICE_AI }}
 
 jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
   deploy:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    needs: ci
 
     steps:
       - uses: actions/checkout@v4

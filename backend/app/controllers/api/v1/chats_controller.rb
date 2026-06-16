@@ -4,7 +4,10 @@ class Api::V1::ChatsController < Api::V1::BaseController
   before_action :ensure_tenant!
 
   def index
-    messages = ChatMessage.order(created_at: :asc).last(50)
+    messages = ChatMessage
+      .where(user: current_user, organization: ActsAsTenant.current_tenant)
+      .order(created_at: :asc)
+      .last(50)
     render json: messages.map { |m| serialize_message(m) }
   end
 
@@ -18,7 +21,7 @@ class Api::V1::ChatsController < Api::V1::BaseController
     ChatMessage.create!(user: current_user, role: "user", content: message, organization: organization)
 
     begin
-      context = RagRetriever.retrieve(organization: organization, query: message)
+      context = RagRetriever.retrieve(organization: organization, user: current_user, query: message)
     rescue StandardError => e
       return render json: { error: e.message }, status: :service_unavailable
     end
@@ -29,8 +32,13 @@ class Api::V1::ChatsController < Api::V1::BaseController
     response.headers["X-Accel-Buffering"] = "no"
 
     assistant = +""
+    sources = context.map do |item|
+      item.slice(:document_id, :document_title, :content, :score, :match)
+    end
 
     begin
+      response.stream.write("data: #{JSON.generate({ sources: sources })}\n\n")
+
       AiServiceClient.stream_chat(message: message, context: context) do |delta|
         assistant << delta
         response.stream.write("data: #{JSON.generate({ token: delta })}\n\n")
@@ -40,7 +48,8 @@ class Api::V1::ChatsController < Api::V1::BaseController
         user: current_user,
         role: "assistant",
         content: assistant.presence || "(no response)",
-        organization: organization
+        organization: organization,
+        sources: sources
       )
       response.stream.write("data: [DONE]\n\n")
     rescue AiServiceClient::Error => e
@@ -57,7 +66,8 @@ class Api::V1::ChatsController < Api::V1::BaseController
       id: message.id,
       role: message.role,
       content: message.content,
-      created_at: message.created_at
+      created_at: message.created_at,
+      sources: message.sources || []
     }
   end
 end

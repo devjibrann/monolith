@@ -4,6 +4,10 @@ class Api::V1::BaseController < ApplicationController
   before_action :authenticate_api_user!
   before_action :set_current_tenant
 
+  rescue_from Pundit::NotAuthorizedError do
+    render json: { error: "Forbidden" }, status: :forbidden
+  end
+
   def ensure_tenant!
     return if ActsAsTenant.current_tenant
 

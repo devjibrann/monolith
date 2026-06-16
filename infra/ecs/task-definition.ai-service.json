@@ -1,20 +1,69 @@
 {
-  "family": "monlith-ai-service",
+  "family": "orgo-ai-service",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "256",
   "memory": "512",
-  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/monlith-ecs-task",
+  "executionRoleArn": "arn:aws:iam::316383776132:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::316383776132:role/monlith-ecs-task",
   "containerDefinitions": [
     {
       "name": "ai-service",
-      "image": "ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/monlith-ai-service:latest",
+      "image": "316383776132.dkr.ecr.us-east-1.amazonaws.com/orgo/ai-service:latest",
       "essential": true,
       "portMappings": [
         {
           "containerPort": 8000,
           "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "PORT", "value": "8000" }
+      ],
+      "secrets": [
+        {
+          "name": "AI_SERVICE_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:AI_SERVICE_SECRET::"
+        },
+        {
+          "name": "AI_PROVIDER",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:AI_PROVIDER::"
+        },
+        {
+          "name": "EMBEDDING_PROVIDER",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:EMBEDDING_PROVIDER::"
+        },
+        {
+          "name": "CHAT_PROVIDER",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:CHAT_PROVIDER::"
+        },
+        {
+          "name": "USE_MOCK_EMBEDDINGS",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:USE_MOCK_EMBEDDINGS::"
+        },
+        {
+          "name": "EMBEDDING_DIMENSIONS",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:EMBEDDING_DIMENSIONS::"
+        },
+        {
+          "name": "OLLAMA_BASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:OLLAMA_BASE_URL::"
+        },
+        {
+          "name": "OLLAMA_EMBEDDING_MODEL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:OLLAMA_EMBEDDING_MODEL::"
+        },
+        {
+          "name": "OLLAMA_CHAT_MODEL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:OLLAMA_CHAT_MODEL::"
+        },
+        {
+          "name": "GEMINI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:GEMINI_API_KEY::"
+        },
+        {
+          "name": "OPENAI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:OPENAI_API_KEY::"
         }
       ],
       "healthCheck": {
@@ -27,9 +76,10 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/monlith-ai-service",
-          "awslogs-region": "REGION",
-          "awslogs-stream-prefix": "ecs"
+          "awslogs-group": "/ecs/orgo-ai-service",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
         }
       }
     }

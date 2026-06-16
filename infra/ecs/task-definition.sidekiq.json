@@ -1,15 +1,15 @@
 {
-  "family": "monlith-sidekiq",
+  "family": "orgo-sidekiq",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "512",
   "memory": "1024",
-  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/monlith-ecs-task",
+  "executionRoleArn": "arn:aws:iam::316383776132:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::316383776132:role/monlith-ecs-task",
   "containerDefinitions": [
     {
       "name": "sidekiq",
-      "image": "ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/monlith-backend:latest",
+      "image": "316383776132.dkr.ecr.us-east-1.amazonaws.com/orgo/backend:latest",
       "essential": true,
       "command": ["bundle", "exec", "sidekiq"],
       "environment": [
@@ -18,35 +18,36 @@
       "secrets": [
         {
           "name": "RAILS_MASTER_KEY",
-          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:monlith/production:RAILS_MASTER_KEY::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:RAILS_MASTER_KEY::"
         },
         {
           "name": "DATABASE_URL",
-          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:monlith/production:DATABASE_URL::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:DATABASE_URL::"
         },
         {
           "name": "REDIS_URL",
-          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:monlith/production:REDIS_URL::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:REDIS_URL::"
         },
         {
           "name": "DEVISE_JWT_SECRET_KEY",
-          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:monlith/production:DEVISE_JWT_SECRET_KEY::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:DEVISE_JWT_SECRET_KEY::"
         },
         {
           "name": "AI_SERVICE_URL",
-          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:monlith/production:AI_SERVICE_URL::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:AI_SERVICE_URL::"
         },
         {
           "name": "AI_SERVICE_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:monlith/production:AI_SERVICE_SECRET::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:AI_SERVICE_SECRET::"
         }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/monlith-sidekiq",
-          "awslogs-region": "REGION",
-          "awslogs-stream-prefix": "ecs"
+          "awslogs-group": "/ecs/orgo-sidekiq",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
         }
       }
     }

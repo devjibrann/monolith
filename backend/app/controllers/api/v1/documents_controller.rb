@@ -3,15 +3,18 @@ class Api::V1::DocumentsController < Api::V1::BaseController
   before_action :set_document, only: [:show, :destroy]
 
   def index
-    documents = Document.includes(file_attachment: :blob).order(created_at: :desc)
+    authorize Document
+    documents = policy_scope(Document).includes(file_attachment: :blob).order(created_at: :desc)
     render json: documents.map { |doc| serialize(doc) }
   end
 
   def show
+    authorize @document
     render json: serialize(@document)
   end
 
   def create
+    authorize Document
     document = Document.new(
       title: document_params[:title],
       user: current_user,
@@ -27,6 +30,7 @@ class Api::V1::DocumentsController < Api::V1::BaseController
   end
 
   def destroy
+    authorize @document
     @document.destroy!
     head :no_content
   end
@@ -34,7 +38,7 @@ class Api::V1::DocumentsController < Api::V1::BaseController
   private
 
   def set_document
-    @document = Document.find(params[:id])
+    @document = policy_scope(Document).find(params[:id])
   end
 
   def document_params
@@ -49,7 +53,8 @@ class Api::V1::DocumentsController < Api::V1::BaseController
       processing_error: document.processing_error,
       filename: document.file.attached? ? document.file.filename.to_s : nil,
       byte_size: document.file.attached? ? document.file.byte_size : nil,
-      created_at: document.created_at
+      created_at: document.created_at,
+      owned_by_current_user: document.user_id == current_user.id
     }
   end
 end

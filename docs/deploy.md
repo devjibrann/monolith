@@ -113,6 +113,22 @@ aws ecs register-task-definition --cli-input-json file://infra/ecs/task-definiti
 
 ## 4. GitHub repository configuration
 
+### Branch strategy
+
+| Branch | CI (PR) | Deploy to ECS |
+|--------|---------|---------------|
+| `production` | via PR checks | **yes** — push runs `Production Deploy` workflow |
+| `main` | via PR checks | no |
+
+Workflows:
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `.github/workflows/ci.yml` | PR → `main` or `production` | Tests, lint, build |
+| `.github/workflows/deploy.yml` | Push → `production`, manual | CI gates + ECR + ECS |
+
+Update the GitHub OIDC trust policy to allow the `production` branch (see `infra/aws/iam-github-actions-deploy-trust.json`).
+
 ### Secrets (Settings → Secrets and variables → Actions)
 
 | Secret | Value |
@@ -140,10 +156,10 @@ aws ecs register-task-definition --cli-input-json file://infra/ecs/task-definiti
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `.github/workflows/ci.yml` | PR + push to `main` | Backend tests, frontend lint/build, AI import check |
-| `.github/workflows/deploy.yml` | Push to `main`, manual | Build prod images → ECR → ECS rolling deploy |
+| `.github/workflows/ci.yml` | PR → `main` / `production` | Backend tests, frontend lint/build, AI import check |
+| `.github/workflows/deploy.yml` | Push → `production`, manual | CI gates → build prod images → ECR → ECS rolling deploy |
 
-First deploy: run **Actions → Deploy to ECS → Run workflow** after variables/secrets and ECS services exist.
+First deploy: merge to `production` or run **Actions → Production Deploy → Run workflow** after variables/secrets and ECS services exist.
 
 ---
 
