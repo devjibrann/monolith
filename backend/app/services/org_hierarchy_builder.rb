@@ -6,7 +6,7 @@ class OrgHierarchyBuilder
   def build
     nodes = []
     edges = []
-    orgs = @user.organizations.includes(:parent, memberships: :user, documents: { file_attachment: :blob }).distinct
+    orgs = @user.organizations.includes(:parent, memberships: :user).distinct
     org_ids = orgs.map(&:id).to_set
 
     user_node_id = node_id("user", @user.id)
@@ -80,7 +80,9 @@ class OrgHierarchyBuilder
   private
 
   def visible_documents(org, membership, viewer_membership)
-    docs = org.documents.includes(file_attachment: :blob).where(user_id: membership.user_id)
+    docs = ActsAsTenant.without_tenant do
+      Document.includes(file_attachment: :blob).where(organization_id: org.id, user_id: membership.user_id)
+    end
     if viewer_membership&.admin? || viewer_membership&.owner?
       docs
     elsif membership.user_id == @user.id

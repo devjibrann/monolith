@@ -9,11 +9,20 @@ class DocumentPolicyTest < ActiveSupport::TestCase
     Membership.create!(user: @member, organization: @org, role: :member)
 
     ActsAsTenant.with_tenant(@org) do
-      @owner_doc = Document.create!(title: "Owner doc", user: @owner, organization: @org, status: :ready)
-      @owner_doc.file.attach(io: StringIO.new("a"), filename: "a.txt", content_type: "text/plain")
-      @member_doc = Document.create!(title: "Member doc", user: @member, organization: @org, status: :ready)
-      @member_doc.file.attach(io: StringIO.new("b"), filename: "b.txt", content_type: "text/plain")
+      @owner_doc = build_document(title: "Owner doc", user: @owner, organization: @org)
+      @member_doc = build_document(title: "Member doc", user: @member, organization: @org)
     end
+  end
+
+  def build_document(title:, user:, organization:)
+    document = Document.new(title: title, user: user, organization: organization, status: :ready)
+    document.file.attach(
+      io: StringIO.new("sample"),
+      filename: "#{title.parameterize}.txt",
+      content_type: "text/plain"
+    )
+    document.save!
+    document
   end
 
   test "members only see their own documents" do

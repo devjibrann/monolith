@@ -30,19 +30,8 @@ class OrgHierarchyBuilderTest < ActiveSupport::TestCase
 
   test "members only see their own documents in the graph" do
     ActsAsTenant.with_tenant(@parent) do
-      doc = Document.create!(title: "Owner doc", user: @owner, organization: @parent, status: :ready)
-      doc.file.attach(
-        io: StringIO.new("hello"),
-        filename: "hello.txt",
-        content_type: "text/plain"
-      )
-
-      member_doc = Document.create!(title: "Member doc", user: @member, organization: @parent, status: :ready)
-      member_doc.file.attach(
-        io: StringIO.new("secret"),
-        filename: "secret.txt",
-        content_type: "text/plain"
-      )
+      build_document(title: "Owner doc", user: @owner, organization: @parent)
+      build_document(title: "Member doc", user: @member, organization: @parent)
     end
 
     owner_graph = OrgHierarchyBuilder.new(@owner).build
@@ -53,5 +42,16 @@ class OrgHierarchyBuilderTest < ActiveSupport::TestCase
     member_doc_nodes = member_graph[:nodes].select { |n| n[:type] == "document" }
     assert_equal 1, member_doc_nodes.size
     assert_equal "Member doc", member_doc_nodes.first.dig(:data, "label")
+  end
+
+  def build_document(title:, user:, organization:)
+    document = Document.new(title: title, user: user, organization: organization, status: :ready)
+    document.file.attach(
+      io: StringIO.new("sample"),
+      filename: "#{title.parameterize}.txt",
+      content_type: "text/plain"
+    )
+    document.save!
+    document
   end
 end
