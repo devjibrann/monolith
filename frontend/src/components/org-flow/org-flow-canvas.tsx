@@ -27,6 +27,29 @@ const legend = [
   { label: "Document", color: "#059669" },
 ] as const;
 
+function mapHierarchyToFlow(graph: Awaited<ReturnType<typeof fetchOrgHierarchy>>) {
+  const flowNodes: Node<OrgFlowNodeData>[] = graph.nodes.map((node) => ({
+    id: node.id,
+    type: node.type,
+    data: node.data,
+    position: { x: 0, y: 0 },
+  }));
+  const flowEdges: Edge[] = graph.edges.map((edge) => ({
+    id: edge.id,
+    source: edge.source,
+    target: edge.target,
+    type: "smoothstep",
+    animated: edge.edge_type === "parent",
+    data: { edgeType: edge.edge_type },
+    style: edgeStyle(edge.edge_type),
+  }));
+
+  return {
+    nodes: layoutOrgFlow(flowNodes, flowEdges),
+    edges: flowEdges,
+  };
+}
+
 export function OrgFlowCanvas() {
   const { organizations, currentOrg, setCurrentOrg } = useAuth();
   const [nodes, setNodes] = useState<Node<OrgFlowNodeData>[]>([]);
@@ -34,29 +57,14 @@ export function OrgFlowCanvas() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const reload = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const graph = await fetchOrgHierarchy();
-      const flowNodes: Node<OrgFlowNodeData>[] = graph.nodes.map((node) => ({
-        id: node.id,
-        type: node.type,
-        data: node.data,
-        position: { x: 0, y: 0 },
-      }));
-      const flowEdges: Edge[] = graph.edges.map((edge) => ({
-        id: edge.id,
-        source: edge.source,
-        target: edge.target,
-        type: "smoothstep",
-        animated: edge.edge_type === "parent",
-        data: { edgeType: edge.edge_type },
-        style: edgeStyle(edge.edge_type),
-      }));
-
-      setNodes(layoutOrgFlow(flowNodes, flowEdges));
-      setEdges(flowEdges);
+      const flow = mapHierarchyToFlow(graph);
+      setNodes(flow.nodes);
+      setEdges(flow.edges);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not load organization map");
     } finally {
@@ -65,8 +73,29 @@ export function OrgFlowCanvas() {
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load, organizations.length]);
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const graph = await fetchOrgHierarchy();
+        if (cancelled) return;
+
+        const flow = mapHierarchyToFlow(graph);
+        setNodes(flow.nodes);
+        setEdges(flow.edges);
+        setError(null);
+      } catch (err) {
+        if (cancelled) return;
+        setError(err instanceof ApiError ? err.message : "Could not load organization map");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [organizations.length]);
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node<OrgFlowNodeData>) => {
@@ -108,7 +137,7 @@ export function OrgFlowCanvas() {
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
         <p>{error}</p>
-        <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => void load()}>
+        <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => void reload()}>
           Retry
         </Button>
       </div>
@@ -142,7 +171,7 @@ export function OrgFlowCanvas() {
             </span>
           ))}
         </div>
-        <Button type="button" variant="outline" size="sm" className="gap-2" onClick={() => void load()}>
+        <Button type="button" variant="outline" size="sm" className="gap-2" onClick={() => void reload()}>
           <RefreshCw className="h-3.5 w-3.5" aria-hidden />
           Refresh
         </Button>
