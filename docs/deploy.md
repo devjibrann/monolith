@@ -129,26 +129,28 @@ Workflows:
 
 Update the GitHub OIDC trust policy to allow the `production` branch (see `infra/aws/iam-github-actions-deploy-trust.json`).
 
-### Secrets (Settings → Secrets and variables → Actions)
+### Secrets and variables
+
+Set these on the **`production` environment** (Settings → Environments → production → Environment secrets / variables), or at repository level (Settings → Secrets and variables → Actions).
+
+The deploy job uses `environment: production`, so environment-scoped values are read correctly.
 
 | Secret | Value |
 |--------|-------|
-| `AWS_ROLE_ARN` | `arn:aws:iam::ACCOUNT:role/github-actions-monlith-deploy` |
-| `NEXT_PUBLIC_API_URL` | Public API URL baked into frontend build, e.g. `https://api.yourdomain.com` |
+| `AWS_ROLE_ARN` | `arn:aws:iam::316383776132:role/github-actions-monlith-deploy` |
+| `NEXT_PUBLIC_API_URL` | Public API URL baked into frontend build, e.g. `https://orgo-alb-….elb.amazonaws.com` |
 
-### Variables (repository variables)
-
-| Variable | Example |
-|----------|---------|
+| Variable | Example (orgo lab) |
+|----------|---------------------|
 | `AWS_REGION` | `us-east-1` |
-| `ECS_CLUSTER` | `monlith` |
-| `ECR_REPOSITORY_BACKEND` | `monlith-backend` |
-| `ECR_REPOSITORY_FRONTEND` | `monlith-frontend` |
-| `ECR_REPOSITORY_AI` | `monlith-ai-service` |
-| `ECS_SERVICE_BACKEND` | `monlith-backend` |
-| `ECS_SERVICE_SIDEKIQ` | `monlith-sidekiq` |
-| `ECS_SERVICE_FRONTEND` | `monlith-frontend` |
-| `ECS_SERVICE_AI` | `monlith-ai-service` |
+| `ECS_CLUSTER` | `orgo` |
+| `ECR_REPOSITORY_BACKEND` | `orgo/backend` |
+| `ECR_REPOSITORY_FRONTEND` | `orgo/frontend` |
+| `ECR_REPOSITORY_AI` | `orgo/ai-service` |
+| `ECS_SERVICE_BACKEND` | `orgo-backend` |
+| `ECS_SERVICE_SIDEKIQ` | `orgo-sidekiq` |
+| `ECS_SERVICE_FRONTEND` | `orgo-frontend` |
+| `ECS_SERVICE_AI` | `orgo-ai-service` |
 
 ---
 
