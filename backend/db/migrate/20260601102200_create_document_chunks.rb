@@ -10,7 +10,7 @@ class CreateDocumentChunks < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :document_chunks, [:organization_id, :document_id]
+    add_index :document_chunks, [ :organization_id, :document_id ]
     add_index :document_chunks, :embedding, using: :hnsw, opclass: :vector_cosine_ops
   end
 end

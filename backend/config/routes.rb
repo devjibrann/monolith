@@ -11,15 +11,15 @@ Rails.application.routes.draw do
     namespace :v1 do
       namespace :auth do
         devise_for :users,
-          path: '',
+          path: "",
           path_names: {
-            sign_in: 'login',
-            sign_out: 'logout',
-            registration: 'signup'
+            sign_in: "login",
+            sign_out: "logout",
+            registration: "signup"
           },
           controllers: {
-            sessions: 'api/v1/auth/sessions',
-            registrations: 'api/v1/auth/registrations'
+            sessions: "api/v1/auth/sessions",
+            registrations: "api/v1/auth/registrations"
           }
       end
 
@@ -29,8 +29,8 @@ Rails.application.routes.draw do
         end
       end
       resources :memberships
-      resources :documents, only: [:index, :show, :create, :destroy]
-      resources :chats, only: [:index, :create]
+      resources :documents, only: [ :index, :show, :create, :destroy ]
+      resources :chats, only: [ :index, :create ]
     end
   end
 end

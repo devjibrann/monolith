@@ -5,9 +5,9 @@ class Api::V1::MembershipsController < Api::V1::BaseController
     memberships = if (org = organization_from_header)
                     ensure_org_member!(org)
                     org.memberships.includes(:user)
-                  else
+    else
                     current_user.memberships.includes(:organization, :user)
-                  end
+    end
     render json: memberships.as_json(include: { user: { only: %i[id email] }, organization: { only: %i[id name slug] } })
   end
 

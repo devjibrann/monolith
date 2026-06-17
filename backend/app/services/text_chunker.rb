@@ -9,7 +9,7 @@ class TextChunker
     chunks = []
     start = 0
     while start < normalized.length
-      finish = [start + chunk_size, normalized.length].min
+      finish = [ start + chunk_size, normalized.length ].min
       chunks << normalized[start...finish].strip
       break if finish >= normalized.length
 

@@ -13,7 +13,7 @@ class Api::V1::Auth::RegistrationsController < Devise::RegistrationsController
 
   def sign_up_params
     user_params = params[:user] || params.dig(:registration, :user)
-  
+
     user_params.permit(
       :email,
       :password,

@@ -20,7 +20,7 @@ class RagRetriever
     return [] if visible_doc_ids.empty?
 
     ActsAsTenant.with_tenant(@organization) do
-      embedding = AiServiceClient.embed_texts([@query]).first
+      embedding = AiServiceClient.embed_texts([ @query ]).first
       vector_hits = vector_search(visible_doc_ids, embedding)
       keyword_hits = keyword_search(visible_doc_ids)
       rank_and_limit(vector_hits, keyword_hits)
@@ -60,7 +60,7 @@ class RagRetriever
         merged[hit[:chunk_id]] = hit
       elsif existing[:match] != hit[:match]
         merged[hit[:chunk_id]] = existing.merge(
-          score: [existing[:score] + 0.15, 1.0].min,
+          score: [ existing[:score] + 0.15, 1.0 ].min,
           match: "hybrid"
         )
       end

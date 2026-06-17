@@ -1,6 +1,6 @@
 class Api::V1::DocumentsController < Api::V1::BaseController
   before_action :ensure_tenant!
-  before_action :set_document, only: [:show, :destroy]
+  before_action :set_document, only: [ :show, :destroy ]
 
   def index
     authorize Document

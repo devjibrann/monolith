@@ -60,5 +60,4 @@ class DocumentTextExtractor
   rescue PDF::Reader::MalformedPDFError => e
     raise ArgumentError, "could not read PDF: #{e.message}"
   end
-
 end

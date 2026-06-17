@@ -19,12 +19,12 @@ class DocumentPolicyTest < ActiveSupport::TestCase
   test "members only see their own documents" do
     ActsAsTenant.current_tenant = @org
     scope = DocumentPolicy::Scope.new(@member, Document.all).resolve
-    assert_equal [@member_doc.id], scope.pluck(:id)
+    assert_equal [ @member_doc.id ], scope.pluck(:id)
   end
 
   test "owners see all organization documents" do
     ActsAsTenant.current_tenant = @org
     scope = DocumentPolicy::Scope.new(@owner, Document.all).resolve
-    assert_equal [@owner_doc.id, @member_doc.id].sort, scope.pluck(:id).sort
+    assert_equal [ @owner_doc.id, @member_doc.id ].sort, scope.pluck(:id).sort
   end
 end
