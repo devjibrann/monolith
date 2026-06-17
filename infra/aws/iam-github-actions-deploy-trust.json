@@ -13,6 +13,7 @@
         },
         "StringLike": {
           "token.actions.githubusercontent.com:sub": [
+            "repo:devjibrann/monolith:environment:production",
             "repo:devjibrann/monolith:ref:refs/heads/production",
             "repo:devjibrann/monolith:ref:refs/heads/main"
           ]
