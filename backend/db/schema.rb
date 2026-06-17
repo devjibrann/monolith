@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_01_102300) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_11_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -48,6 +48,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_01_102300) do
     t.datetime "created_at", null: false
     t.bigint "organization_id", null: false
     t.string "role", null: false
+    t.jsonb "sources", default: [], null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["organization_id", "created_at"], name: "index_chat_messages_on_organization_id_and_created_at"
@@ -105,9 +106,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_01_102300) do
     t.datetime "created_at", null: false
     t.string "name"
     t.bigint "owner_id", null: false
+    t.bigint "parent_id"
     t.string "slug"
     t.datetime "updated_at", null: false
     t.index ["owner_id"], name: "index_organizations_on_owner_id"
+    t.index ["parent_id"], name: "index_organizations_on_parent_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -132,5 +135,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_01_102300) do
   add_foreign_key "documents", "users"
   add_foreign_key "memberships", "organizations"
   add_foreign_key "memberships", "users"
+  add_foreign_key "organizations", "organizations", column: "parent_id"
   add_foreign_key "organizations", "users", column: "owner_id"
 end
