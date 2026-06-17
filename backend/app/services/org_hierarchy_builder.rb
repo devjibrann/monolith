@@ -80,15 +80,12 @@ class OrgHierarchyBuilder
   private
 
   def visible_documents(org, membership, viewer_membership)
-    docs = ActsAsTenant.without_tenant do
-      Document.includes(file_attachment: :blob).where(organization_id: org.id, user_id: membership.user_id)
+    unless viewer_membership&.admin? || viewer_membership&.owner? || membership.user_id == @user.id
+      return []
     end
-    if viewer_membership&.admin? || viewer_membership&.owner?
-      docs
-    elsif membership.user_id == @user.id
-      docs
-    else
-      Document.none
+
+    ActsAsTenant.without_tenant do
+      Document.includes(file_attachment: :blob).where(organization_id: org.id, user_id: membership.user_id)
     end
   end
 
