@@ -408,7 +408,7 @@ DEPENDENCIES
   neighbor
   pdf-reader (~> 2.14)
   pg (~> 1.1)
-  puma (>= 5.0)
+  puma (>= 8.0.2)
   pundit
   rack-cors
   rails (~> 8.1.3)
