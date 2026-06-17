@@ -28,8 +28,15 @@ class Api::V1::MembershipsController < Api::V1::BaseController
     ensure_org_member!(org)
     ensure_admin_or_owner!(org)
 
-    user = User.find(membership_params[:user_id])
-    role = membership_params[:role].presence&.to_sym || :member
+    user_id = params.dig(:membership, :user_id)
+    if user_id.blank?
+      return render json: { error: "membership[user_id] is required" }, status: :unprocessable_entity
+    end
+
+    user = User.find(user_id)
+    role = resolve_membership_role
+    return render json: { error: "invalid role" }, status: :unprocessable_entity if role.nil?
+
     membership = org.memberships.build(user: user, role: role)
     membership.save!
     render json: membership.as_json(include: { user: { only: %i[id email] } }), status: :created
@@ -39,7 +46,10 @@ class Api::V1::MembershipsController < Api::V1::BaseController
     ensure_org_member!(@membership.organization)
     ensure_admin_or_owner!(@membership.organization)
 
-    @membership.update!(role: membership_params[:role])
+    role = resolve_membership_role
+    return render json: { error: "invalid role" }, status: :unprocessable_entity if role.nil?
+
+    @membership.update!(role: role)
     render json: @membership.as_json(include: { user: { only: %i[id email] } })
   end
 
@@ -70,7 +80,15 @@ class Api::V1::MembershipsController < Api::V1::BaseController
   end
 
   def membership_params
-    params.require(:membership).permit(:user_id, :role, :organization_slug)
+    params.require(:membership).permit(:organization_slug)
+  end
+
+  def resolve_membership_role
+    role = params.dig(:membership, :role).to_s.presence
+    return :member if role.blank?
+    return role.to_sym if Membership.roles.key?(role)
+
+    nil
   end
 
   def organization_from_header

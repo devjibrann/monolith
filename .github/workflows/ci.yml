@@ -37,7 +37,7 @@ jobs:
           working-directory: backend
 
       - name: Scan for common Rails security vulnerabilities
-        run: bin/brakeman --no-pager
+        run: bin/brakeman --no-pager -q
 
       - name: Scan gems for known vulnerabilities
         run: bin/bundler-audit
