@@ -1,12 +1,11 @@
 # Production pipeline: CI gates, then build images, push to ECR, deploy ECS.
-# Triggers on push to `production` (and manual dispatch).
+# Manual only (Actions tab → Production Deploy → Run workflow).
+# To deploy automatically again, add back: push: branches: [production]
 # PRs target `production` via ci.yml only.
 
 name: Production Deploy
 
 on:
-  push:
-    branches: [production]
   workflow_dispatch:
 
 concurrency:
