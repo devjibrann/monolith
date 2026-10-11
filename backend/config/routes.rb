@@ -26,11 +26,15 @@ Rails.application.routes.draw do
       resources :organizations do
         collection do
           get :hierarchy
+          get :user_hierarchy
         end
       end
       resources :memberships
       resources :documents, only: [ :index, :show, :create, :destroy ]
       resources :chats, only: [ :index, :create ]
+
+      get "reports/chats/download", to: "reports#chats_download"
+      get "reports/chats/observations", to: "reports#chat_observations"
     end
   end
 end

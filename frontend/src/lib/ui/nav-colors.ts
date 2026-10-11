@@ -23,6 +23,16 @@ export const navAccent = {
     activeIcon: "text-sky-800 dark:text-sky-300",
     activeBg: "bg-sky-50 text-sky-950 ring-sky-200/70 dark:bg-sky-950/50 dark:text-sky-100 dark:ring-sky-800/50",
   },
+  "/users/hierarchy": {
+    activeIcon: "text-teal-800 dark:text-teal-300",
+    activeBg:
+      "bg-teal-50 text-teal-950 ring-teal-200/70 dark:bg-teal-950/50 dark:text-teal-100 dark:ring-teal-800/50",
+  },
+  "/reports": {
+    activeIcon: "text-amber-800 dark:text-amber-300",
+    activeBg:
+      "bg-amber-50 text-amber-950 ring-amber-200/70 dark:bg-amber-950/50 dark:text-amber-100 dark:ring-amber-800/50",
+  },
 } as const;
 
 export type NavHref = keyof typeof navAccent;

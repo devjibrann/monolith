@@ -27,6 +27,21 @@ class AiServiceClient
   end
 
   def self.stream_chat(message:, context:)
+    stream_sse("/internal/chat/stream", message: message, context: context) do |payload|
+      yield payload
+    end
+  end
+
+  # Streams structured agent pipeline events. Yields parsed hashes like
+  # { "type" => "step", ... } or { "type" => "token", "token" => "..." }.
+  def self.stream_agent(message:, context:)
+    stream_sse("/internal/agent/stream", message: message, context: context) do |payload|
+      event = JSON.parse(payload) rescue nil
+      yield event if event.is_a?(Hash)
+    end
+  end
+
+  def self.stream_sse(path, message:, context:)
     conn = Faraday.new(url: base_url) do |f|
       f.options.timeout = 300
       f.headers["X-Internal-Secret"] = secret
@@ -36,7 +51,7 @@ class AiServiceClient
 
     buffer = +""
 
-    conn.post("/internal/chat/stream") do |req|
+    conn.post(path) do |req|
       req.body = { message: message, context: context }.to_json
       req.options.on_data = proc do |chunk, _size|
         buffer << chunk
@@ -56,6 +71,7 @@ class AiServiceClient
   rescue Faraday::Error => e
     raise Error, e.message
   end
+  private_class_method :stream_sse
 
   def self.extract_error(response)
     body = response.body

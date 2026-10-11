@@ -50,6 +50,14 @@
         {
           "name": "AI_SERVICE_SECRET",
           "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:AI_SERVICE_SECRET::"
+        },
+        {
+          "name": "REPORTING_SERVICE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:REPORTING_SERVICE_URL::"
+        },
+        {
+          "name": "REPORTING_SERVICE_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:REPORTING_SERVICE_SECRET::"
         }
       ],
       "healthCheck": {

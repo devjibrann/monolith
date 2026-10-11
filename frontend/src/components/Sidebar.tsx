@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
+  BarChart3,
   Building2,
   FileText,
   GitBranch,
@@ -11,6 +12,7 @@ import {
   Loader2,
   LogOut,
   MessageSquare,
+  Network,
   Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -22,8 +24,10 @@ const nav = [
   { name: "Dashboard", href: "/" as NavHref, icon: Home },
   { name: "Organizations", href: "/organizations" as NavHref, icon: Building2 },
   { name: "Org map", href: "/organizations/map" as NavHref, icon: GitBranch },
+  { name: "User hierarchy", href: "/users/hierarchy" as NavHref, icon: Network },
   { name: "Documents", href: "/documents" as NavHref, icon: FileText },
   { name: "Chat", href: "/chat" as NavHref, icon: MessageSquare },
+  { name: "Reports", href: "/reports" as NavHref, icon: BarChart3 },
 ] as const;
 
 export default function Sidebar() {

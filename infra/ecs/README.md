@@ -12,6 +12,7 @@ aws ecs register-task-definition --cli-input-json file://infra/ecs/task-definiti
 aws ecs register-task-definition --cli-input-json file://infra/ecs/task-definition.sidekiq.json
 aws ecs register-task-definition --cli-input-json file://infra/ecs/task-definition.frontend.json
 aws ecs register-task-definition --cli-input-json file://infra/ecs/task-definition.ai-service.json
+aws ecs register-task-definition --cli-input-json file://infra/ecs/task-definition.reporting-service.json
 ```
 
 GitHub Actions **Deploy to ECS** workflow updates the container image on each push to `main`; it uses these same task definition files from the repo.

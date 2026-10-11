@@ -46,3 +46,21 @@
 - [ ] ALB and Networking (AWS console)
 - [x] CI/CD with Github Actions (`.github/workflows/`)
 - [x] Production Dockerfiles (`infra/docker/*.prod.Dockerfile`)
+
+### Milestone 9: Agenting pipeline ✅
+- [x] Multi-step agent pipeline in ai-service (`plan` → `ground` → `synthesize`)
+- [x] SSE agent stream endpoint (`/internal/agent/stream`)
+- [x] Rails chat controller agent mode + `AiServiceClient.stream_agent`
+- [x] Frontend agent toggle, step progress UI, and streaming tokens
+
+### Milestone 10: Reporting microservice ✅
+- [x] FastAPI reporting-service (chat export CSV/JSON, chat observations)
+- [x] Rails proxy at `/api/v1/reports/*` with role checks
+- [x] Frontend reports page (downloads + observation dashboards)
+- [x] Docker Compose wiring (`reporting-service` on port 8100)
+- [x] Production Dockerfile, ECS task definition, and deploy workflow
+
+### Milestone 11: User hierarchy (React Flow) ✅
+- [x] `UserHierarchyBuilder` (org → owners → admins → members)
+- [x] API route `GET /api/v1/organizations/user_hierarchy`
+- [x] React Flow canvas at `/users/hierarchy` with Dagre layout

@@ -1,6 +1,19 @@
 # AI Service
 
-FastAPI service for embeddings and streaming chat. Rails calls `/internal/*` with `AI_SERVICE_SECRET`.
+FastAPI service for embeddings, streaming chat, and the multi-step agent pipeline. Rails calls `/internal/*` with `AI_SERVICE_SECRET`.
+
+## Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /internal/embeddings` | Batch text embeddings |
+| `POST /internal/chat/stream` | SSE token stream for RAG chat |
+| `POST /internal/agent/stream` | SSE stream of agent pipeline events (`step`, `token`, `done`) |
+| `GET /health` | Provider config and health |
+
+## Agent pipeline
+
+When Rails receives `mode: "agent"` on chat, it calls `/internal/agent/stream`. The pipeline runs three steps — **plan → ground → synthesize** — and streams structured progress events before the final answer tokens. See `app/services/agent_pipeline.py`.
 
 ## Providers
 

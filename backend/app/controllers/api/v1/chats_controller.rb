@@ -17,6 +17,8 @@ class Api::V1::ChatsController < Api::V1::BaseController
       return render json: { error: "message is required" }, status: :unprocessable_entity
     end
 
+    agent_mode = params[:mode].to_s == "agent"
+
     organization = ActsAsTenant.current_tenant
     ChatMessage.create!(user: current_user, role: "user", content: message, organization: organization)
 
@@ -39,9 +41,21 @@ class Api::V1::ChatsController < Api::V1::BaseController
     begin
       response.stream.write("data: #{JSON.generate({ sources: sources })}\n\n")
 
-      AiServiceClient.stream_chat(message: message, context: context) do |delta|
-        assistant << delta
-        response.stream.write("data: #{JSON.generate({ token: delta })}\n\n")
+      if agent_mode
+        AiServiceClient.stream_agent(message: message, context: context) do |event|
+          case event["type"]
+          when "token"
+            assistant << event["token"].to_s
+            response.stream.write("data: #{JSON.generate({ token: event["token"] })}\n\n")
+          when "step"
+            response.stream.write("data: #{JSON.generate({ step: event.slice("step", "status", "detail") })}\n\n")
+          end
+        end
+      else
+        AiServiceClient.stream_chat(message: message, context: context) do |delta|
+          assistant << delta
+          response.stream.write("data: #{JSON.generate({ token: delta })}\n\n")
+        end
       end
 
       ChatMessage.create!(

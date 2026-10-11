@@ -61,6 +61,8 @@ Create secret `monlith/production` (JSON or key/value) with:
 | `CORS_ORIGINS` | `https://app.yourdomain.com` |
 | `AI_SERVICE_URL` | `http://monlith-ai-service:8000` (ECS service discovery / internal URL) |
 | `AI_SERVICE_SECRET` | Shared secret (match ai-service task env) |
+| `REPORTING_SERVICE_URL` | `http://monlith-reporting-service:8100` (internal URL) |
+| `REPORTING_SERVICE_SECRET` | Shared secret (match reporting-service task env) |
 
 Update ARNs in `infra/ecs/task-definition.*.json` (replace `REGION`, `ACCOUNT_ID`, and secret ARN suffix).
 
@@ -71,6 +73,7 @@ Update ARNs in `infra/ecs/task-definition.*.json` (replace `REGION`, `ACCOUNT_ID
 /ecs/monlith-sidekiq
 /ecs/monlith-frontend
 /ecs/monlith-ai-service
+/ecs/monlith-reporting-service
 ```
 
 ### ECS cluster + services
@@ -80,14 +83,15 @@ Update ARNs in `infra/ecs/task-definition.*.json` (replace `REGION`, `ACCOUNT_ID
 
 ```bash
 aws ecs register-task-definition --cli-input-json file://infra/ecs/task-definition.backend.json
-# repeat for sidekiq, frontend, ai-service
+# repeat for sidekiq, frontend, ai-service, reporting-service
 ```
 
-3. Create **four Fargate services** in private subnets:
+3. Create **five Fargate services** in private subnets:
    - `monlith-backend` — target group → ALB path `/api` or host `api.*`
    - `monlith-sidekiq` — no load balancer
    - `monlith-frontend` — ALB default /
    - `monlith-ai-service` — internal only (backend SG → port 8000)
+   - `monlith-reporting-service` — internal only (backend SG → port 8100; RDS read access)
 
 ### ALB + security groups
 
@@ -98,7 +102,8 @@ aws ecs register-task-definition --cli-input-json file://infra/ecs/task-definiti
 | `ecs-backend-sg` | 3000 from `alb-sg` |
 | `ecs-sidekiq-sg` | none |
 | `ecs-ai-sg` | 8000 from backend/sidekiq SGs |
-| `rds-sg` | 5432 from backend/sidekiq SGs |
+| `ecs-reporting-sg` | 8100 from backend SG; outbound 5432 to RDS |
+| `rds-sg` | 5432 from backend/sidekiq/reporting SGs |
 | `redis-sg` | 6379 from backend/sidekiq SGs |
 
 ---
@@ -147,10 +152,12 @@ The deploy job uses `environment: production`, so environment-scoped values are 
 | `ECR_REPOSITORY_BACKEND` | `orgo/backend` |
 | `ECR_REPOSITORY_FRONTEND` | `orgo/frontend` |
 | `ECR_REPOSITORY_AI` | `orgo/ai-service` |
+| `ECR_REPOSITORY_REPORTING` | `orgo/reporting-service` |
 | `ECS_SERVICE_BACKEND` | `orgo-backend` |
 | `ECS_SERVICE_SIDEKIQ` | `orgo-sidekiq` |
 | `ECS_SERVICE_FRONTEND` | `orgo-frontend` |
 | `ECS_SERVICE_AI` | `orgo-ai-service` |
+| `ECS_SERVICE_REPORTING` | `orgo-reporting-service` |
 
 ---
 
@@ -158,7 +165,7 @@ The deploy job uses `environment: production`, so environment-scoped values are 
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `.github/workflows/ci.yml` | PR → `main` / `production` | Backend tests, frontend lint/build, AI import check |
+| `.github/workflows/ci.yml` | PR → `main` / `production` | Backend tests, frontend lint/build, AI + reporting import checks |
 | `.github/workflows/deploy.yml` | Push → `production`, manual | CI gates → build prod images → ECR → ECS rolling deploy |
 
 First deploy: merge to `production` or run **Actions → Production Deploy → Run workflow** after variables/secrets and ECS services exist.
@@ -178,6 +185,9 @@ docker build -f infra/docker/frontend.prod.Dockerfile \
 
 # AI service
 docker build -f infra/docker/ai-service.prod.Dockerfile -t monlith-ai:local .
+
+# Reporting service
+docker build -f infra/docker/reporting-service.prod.Dockerfile -t monlith-reporting:local .
 ```
 
 Development still uses `docker-compose.yml` and `infra/docker/*.Dockerfile` (dev targets).

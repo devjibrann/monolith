@@ -12,7 +12,9 @@ export function ChatEmptyState({ orgName }: { orgName: string }) {
       </h2>
       <p className="mt-2 max-w-sm text-sm leading-relaxed text-gray-600 dark:text-gray-400">
         Answers use documents uploaded to <span className="font-medium">{orgName}</span>.
-        Upload PDF, TXT, or Markdown first for grounded replies.
+        Upload PDF, TXT, or Markdown first for grounded replies. Toggle{" "}
+        <span className="font-medium">Agent</span> for a multi-step plan → ground → synthesize
+        pipeline.
       </p>
       <Link
         href="/documents"

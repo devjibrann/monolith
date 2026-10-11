@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict, Iterator, List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -5,6 +6,7 @@ from pydantic import BaseModel, Field
 from starlette.responses import StreamingResponse
 
 from app.deps import verify_internal_secret
+from app.services.agent_pipeline import run_agent_pipeline
 from app.services.chat import stream_chat_reply
 from app.services.embeddings import embed_texts
 
@@ -38,6 +40,18 @@ async def chat_stream(body: ChatStreamRequest) -> StreamingResponse:
     def event_stream() -> Iterator[str]:
         for token in stream_chat_reply(body.message, body.context):
             yield f"data: {token}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+@router.post("/agent/stream")
+async def agent_stream(body: ChatStreamRequest) -> StreamingResponse:
+    """Streams structured agent pipeline events (steps + answer tokens) as SSE."""
+
+    def event_stream() -> Iterator[str]:
+        for event in run_agent_pipeline(body.message, body.context):
+            yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")

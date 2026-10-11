@@ -95,4 +95,24 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Import smoke test
+        run: |
+          python -c "from app.main import app; assert app.title"
+          python -c "from app.services.agent_pipeline import run_agent_pipeline"
+
+  reporting-service:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: reporting-service
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -r requirements.txt
+
+      - name: Import smoke test
         run: python -c "from app.main import app; assert app.title"

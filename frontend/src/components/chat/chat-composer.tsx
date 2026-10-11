@@ -1,5 +1,5 @@
 import { FormEvent, KeyboardEvent, useRef, useEffect } from "react";
-import { Loader2, SendHorizonal } from "lucide-react";
+import { Loader2, SendHorizonal, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -9,12 +9,16 @@ export function ChatComposer({
   onSubmit,
   disabled,
   sending,
+  agentMode,
+  onAgentModeChange,
 }: {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
   disabled?: boolean;
   sending?: boolean;
+  agentMode?: boolean;
+  onAgentModeChange?: (enabled: boolean) => void;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -43,6 +47,24 @@ export function ChatComposer({
       className="chat-composer-enter border-t border-gray-200/80 bg-gray-50/50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950/40"
     >
       <div className="mx-auto flex max-w-3xl items-end gap-2">
+        {onAgentModeChange ? (
+          <Button
+            type="button"
+            variant={agentMode ? "default" : "outline"}
+            className="h-11 shrink-0 gap-1.5 rounded-xl px-3"
+            onClick={() => onAgentModeChange(!agentMode)}
+            disabled={disabled || sending}
+            aria-pressed={agentMode}
+            title={
+              agentMode
+                ? "Agent mode on: multi-step plan, ground, synthesize pipeline"
+                : "Agent mode off: direct RAG answer"
+            }
+          >
+            <Sparkles className="h-4 w-4" aria-hidden />
+            Agent
+          </Button>
+        ) : null}
         <label htmlFor="chat-input" className="sr-only">
           Message
         </label>
@@ -77,6 +99,7 @@ export function ChatComposer({
       </div>
       <p className="mx-auto mt-2 max-w-3xl text-center text-xs text-gray-500 dark:text-gray-400">
         Enter to send · Shift+Enter for a new line
+        {agentMode ? " · Agent mode: plans before answering" : ""}
       </p>
     </form>
   );

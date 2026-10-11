@@ -7,6 +7,13 @@ class Api::V1::OrganizationsController < Api::V1::BaseController
     render json: OrgHierarchyBuilder.new(current_user).build
   end
 
+  def user_hierarchy
+    ensure_tenant!
+    return if performed?
+
+    render json: UserHierarchyBuilder.new(ActsAsTenant.current_tenant, current_user).build
+  end
+
   def create
     parent = find_parent_organization if organization_params[:parent_id].present?
 

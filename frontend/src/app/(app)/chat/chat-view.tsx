@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  type AgentStep,
   ApiError,
   type ChatMessageRecord,
   type ChatSource,
@@ -9,6 +10,7 @@ import {
   streamChat,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { ChatAgentSteps } from "@/components/chat/chat-agent-steps";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatEmptyState } from "@/components/chat/chat-empty-state";
 import { ChatMessage } from "@/components/chat/chat-message";
@@ -42,6 +44,8 @@ export function ChatView() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState("");
   const [streamingSources, setStreamingSources] = useState<ChatSource[]>([]);
+  const [agentMode, setAgentMode] = useState(false);
+  const [agentSteps, setAgentSteps] = useState<AgentStep[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -127,6 +131,7 @@ export function ChatView() {
     setInput("");
     setStreaming("");
     setStreamingSources([]);
+    setAgentSteps([]);
     tokenBufferRef.current = "";
     stickToBottomRef.current = true;
 
@@ -142,11 +147,15 @@ export function ChatView() {
 
     try {
       await streamChat(text, enqueueToken, {
+        mode: agentMode ? "agent" : "chat",
         onError: (err) => {
           streamError = err;
         },
         onSources: (sources) => {
           setStreamingSources(sources);
+        },
+        onStep: (step) => {
+          setAgentSteps((prev) => [...prev, step]);
         },
       });
       if (rafRef.current != null) {
@@ -162,6 +171,7 @@ export function ChatView() {
     } finally {
       setStreaming("");
       setStreamingSources([]);
+      setAgentSteps([]);
       tokenBufferRef.current = "";
       setSending(false);
     }
@@ -204,6 +214,10 @@ export function ChatView() {
                 />
               ))}
 
+              {sending && agentSteps.length > 0 && (
+                <ChatAgentSteps steps={agentSteps} />
+              )}
+
               {sending && !streaming && messages.at(-1)?.role === "user" && (
                 <ChatStreamingMessage content="" />
               )}
@@ -232,6 +246,8 @@ export function ChatView() {
           onChange={setInput}
           onSubmit={() => void handleSend()}
           sending={sending}
+          agentMode={agentMode}
+          onAgentModeChange={setAgentMode}
         />
       </CardContent>
     </Card>

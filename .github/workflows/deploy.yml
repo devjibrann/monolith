@@ -31,10 +31,12 @@ jobs:
       ECR_REPOSITORY_BACKEND: ${{ vars.ECR_REPOSITORY_BACKEND }}
       ECR_REPOSITORY_FRONTEND: ${{ vars.ECR_REPOSITORY_FRONTEND }}
       ECR_REPOSITORY_AI: ${{ vars.ECR_REPOSITORY_AI }}
+      ECR_REPOSITORY_REPORTING: ${{ vars.ECR_REPOSITORY_REPORTING }}
       ECS_SERVICE_BACKEND: ${{ vars.ECS_SERVICE_BACKEND }}
       ECS_SERVICE_SIDEKIQ: ${{ vars.ECS_SERVICE_SIDEKIQ }}
       ECS_SERVICE_FRONTEND: ${{ vars.ECS_SERVICE_FRONTEND }}
       ECS_SERVICE_AI: ${{ vars.ECS_SERVICE_AI }}
+      ECS_SERVICE_REPORTING: ${{ vars.ECS_SERVICE_REPORTING }}
 
     steps:
       - uses: actions/checkout@v4
@@ -48,10 +50,12 @@ jobs:
           check "${{ vars.ECR_REPOSITORY_BACKEND }}" "Variable ECR_REPOSITORY_BACKEND"
           check "${{ vars.ECR_REPOSITORY_FRONTEND }}" "Variable ECR_REPOSITORY_FRONTEND"
           check "${{ vars.ECR_REPOSITORY_AI }}" "Variable ECR_REPOSITORY_AI"
+          check "${{ vars.ECR_REPOSITORY_REPORTING }}" "Variable ECR_REPOSITORY_REPORTING"
           check "${{ vars.ECS_SERVICE_BACKEND }}" "Variable ECS_SERVICE_BACKEND"
           check "${{ vars.ECS_SERVICE_SIDEKIQ }}" "Variable ECS_SERVICE_SIDEKIQ"
           check "${{ vars.ECS_SERVICE_FRONTEND }}" "Variable ECS_SERVICE_FRONTEND"
           check "${{ vars.ECS_SERVICE_AI }}" "Variable ECS_SERVICE_AI"
+          check "${{ vars.ECS_SERVICE_REPORTING }}" "Variable ECS_SERVICE_REPORTING"
           check "${{ secrets.AWS_ROLE_ARN }}" "Secret AWS_ROLE_ARN"
           check "${{ secrets.NEXT_PUBLIC_API_URL }}" "Secret NEXT_PUBLIC_API_URL"
           exit $missing
@@ -104,6 +108,17 @@ jobs:
           docker push "${IMAGE}:latest"
           echo "AI_IMAGE=${IMAGE}:${IMAGE_TAG}" >> "$GITHUB_ENV"
 
+      - name: Build and push reporting-service
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          REPOSITORY: ${{ env.ECR_REPOSITORY_REPORTING }}
+        run: |
+          IMAGE="${REGISTRY}/${REPOSITORY}"
+          docker build -f infra/docker/reporting-service.prod.Dockerfile -t "${IMAGE}:${IMAGE_TAG}" -t "${IMAGE}:latest" .
+          docker push "${IMAGE}:${IMAGE_TAG}"
+          docker push "${IMAGE}:latest"
+          echo "REPORTING_IMAGE=${IMAGE}:${IMAGE_TAG}" >> "$GITHUB_ENV"
+
       - name: Deploy backend service
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
@@ -142,4 +157,14 @@ jobs:
           cluster: ${{ env.ECS_CLUSTER }}
           container-name: ai-service
           image: ${{ env.AI_IMAGE }}
+          wait-for-service-stability: true
+
+      - name: Deploy reporting-service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: infra/ecs/task-definition.reporting-service.json
+          service: ${{ env.ECS_SERVICE_REPORTING }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          container-name: reporting-service
+          image: ${{ env.REPORTING_IMAGE }}
           wait-for-service-stability: true

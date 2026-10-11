@@ -1,0 +1,51 @@
+{
+  "family": "orgo-reporting-service",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::316383776132:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::316383776132:role/monlith-ecs-task",
+  "containerDefinitions": [
+    {
+      "name": "reporting-service",
+      "image": "316383776132.dkr.ecr.us-east-1.amazonaws.com/orgo/reporting-service:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8100,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "PORT", "value": "8100" }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:DATABASE_URL::"
+        },
+        {
+          "name": "REPORTING_SERVICE_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:316383776132:secret:monolith-fLVFan:REPORTING_SERVICE_SECRET::"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8100/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/orgo-reporting-service",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
+        }
+      }
+    }
+  ]
+}

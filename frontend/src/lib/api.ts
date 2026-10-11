@@ -105,6 +105,12 @@ export async function fetchOrgHierarchy() {
   );
 }
 
+export async function fetchUserHierarchy() {
+  return apiFetch<import("@/lib/user-flow/types").UserHierarchyResponse>(
+    "/api/v1/organizations/user_hierarchy"
+  );
+}
+
 export async function createOrganization(
   name: string,
   slug: string,
@@ -148,6 +154,93 @@ export type ChatSource = {
   score?: number;
   match?: string;
 };
+
+export type AgentStep = {
+  step: "plan" | "ground" | "synthesize";
+  status: "running" | "done";
+  detail: string;
+};
+
+export type ChatObservations = {
+  organization_id: number;
+  window_days: number;
+  totals: {
+    total_messages: number;
+    user_messages: number;
+    assistant_messages: number;
+    active_users: number;
+    first_message_at: string | null;
+    last_message_at: string | null;
+    avg_user_message_length: number;
+    avg_assistant_message_length: number;
+  };
+  per_user: {
+    user_id: number;
+    email: string;
+    questions_asked: number;
+    total_messages: number;
+    last_active_at: string | null;
+  }[];
+  per_day: {
+    day: string;
+    user_messages: number;
+    assistant_messages: number;
+  }[];
+  top_sources: {
+    document_title: string;
+    citations: number;
+  }[];
+};
+
+export async function fetchChatObservations(days = 30) {
+  return apiFetch<ChatObservations>(
+    `/api/v1/reports/chats/observations?days=${days}`
+  );
+}
+
+export async function downloadChatReport(
+  format: "csv" | "json",
+  scope: "self" | "organization"
+): Promise<void> {
+  const headers = new Headers();
+  const token = localStorage.getItem("token");
+  const orgSlug = localStorage.getItem("orgSlug");
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  if (orgSlug) headers.set("X-Organization-Slug", orgSlug);
+
+  const res = await fetch(
+    `${API_URL}/api/v1/reports/chats/download?export_format=${format}&scope=${scope}`,
+    { headers }
+  );
+
+  if (!res.ok) {
+    let body: unknown;
+    try {
+      body = await res.json();
+    } catch {
+      body = undefined;
+    }
+    const message =
+      typeof body === "object" && body !== null && "error" in body
+        ? String((body as { error: string }).error)
+        : `Download failed (${res.status})`;
+    throw new ApiError(message, res.status, body);
+  }
+
+  const disposition = res.headers.get("Content-Disposition") ?? "";
+  const filename =
+    /filename="([^"]+)"/.exec(disposition)?.[1] ?? `chat-report.${format}`;
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
 
 export async function fetchDocuments() {
   return apiFetch<DocumentRecord[]>("/api/v1/documents");
@@ -200,8 +293,10 @@ export async function streamChat(
   message: string,
   onToken: (token: string) => void,
   options?: {
+    mode?: "chat" | "agent";
     onError?: (error: string) => void;
     onSources?: (sources: ChatSource[]) => void;
+    onStep?: (step: AgentStep) => void;
   }
 ): Promise<void> {
   const headers = new Headers({ "Content-Type": "application/json" });
@@ -215,7 +310,7 @@ export async function streamChat(
   const res = await fetch(`${API_URL}/api/v1/chats`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, mode: options?.mode ?? "chat" }),
   });
 
   if (!res.ok || !res.body) {
@@ -254,6 +349,7 @@ export async function streamChat(
             token?: string;
             error?: string;
             sources?: ChatSource[];
+            step?: AgentStep;
           };
           if (parsed.error) {
             options?.onError?.(parsed.error);
@@ -261,6 +357,9 @@ export async function streamChat(
           }
           if (parsed.sources) {
             options?.onSources?.(parsed.sources);
+          }
+          if (parsed.step) {
+            options?.onStep?.(parsed.step);
           }
           if (parsed.token) onToken(parsed.token);
         } catch {

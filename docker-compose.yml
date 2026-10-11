@@ -31,12 +31,15 @@ services:
       CORS_ORIGINS: http://localhost:3001
       AI_SERVICE_URL: http://ai-service:8000
       AI_SERVICE_SECRET: development-ai-secret-change-in-production
+      REPORTING_SERVICE_URL: http://reporting-service:8100
+      REPORTING_SERVICE_SECRET: development-reporting-secret-change-in-production
     ports:
       - "3000:3000"
     depends_on:
       - db
       - redis
       - ai-service
+      - reporting-service
     env_file:
       - ./backend/.env
 
@@ -112,6 +115,20 @@ services:
       OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-}
     depends_on:
       - redis
+
+  reporting-service:
+    build:
+      context: .
+      dockerfile: infra/docker/reporting-service.Dockerfile
+    volumes:
+      - ./reporting-service:/app
+    ports:
+      - "8100:8100"
+    environment:
+      DATABASE_URL: postgresql://postgres:password@db:5432/ai_workspace_development
+      REPORTING_SERVICE_SECRET: development-reporting-secret-change-in-production
+    depends_on:
+      - db
 
   ollama:
     image: ollama/ollama:latest

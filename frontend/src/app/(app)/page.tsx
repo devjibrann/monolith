@@ -1,7 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, FileText, MessageSquare, User } from "lucide-react";
+import {
+  BarChart3,
+  Building2,
+  FileText,
+  GitBranch,
+  MessageSquare,
+  Network,
+  Sparkles,
+  User,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -19,13 +28,43 @@ const workflowSteps = [
   },
   {
     title: "Ask in chat",
-    description: "Stream answers grounded in your uploaded content.",
+    description: "Stream RAG answers or enable Agent mode for a plan → ground → synthesize pipeline.",
     href: "/chat",
     icon: MessageSquare,
     surfaceClass: "shell-workflow-chat",
     iconWrap: "bg-sky-100 text-sky-900 ring-sky-200/60 dark:bg-sky-950/60 dark:text-sky-200 dark:ring-sky-800/40",
     linkClass: "text-sky-800 dark:text-sky-300",
     label: "Open chat",
+  },
+  {
+    title: "Chat reports",
+    description: "Download transcripts and view conversation analytics for your organization.",
+    href: "/reports",
+    icon: BarChart3,
+    surfaceClass: "shell-workflow-reports",
+    iconWrap: "bg-amber-100 text-amber-900 ring-amber-200/60 dark:bg-amber-950/60 dark:text-amber-200 dark:ring-amber-800/40",
+    linkClass: "text-amber-800 dark:text-amber-300",
+    label: "Open reports",
+  },
+  {
+    title: "User hierarchy",
+    description: "Explore members by role with document and chat activity on an interactive map.",
+    href: "/users/hierarchy",
+    icon: Network,
+    surfaceClass: "shell-workflow-users",
+    iconWrap: "bg-teal-100 text-teal-900 ring-teal-200/60 dark:bg-teal-950/60 dark:text-teal-200 dark:ring-teal-800/40",
+    linkClass: "text-teal-800 dark:text-teal-300",
+    label: "Open hierarchy",
+  },
+  {
+    title: "Org map",
+    description: "Visualize organizations, memberships, and documents across your workspace.",
+    href: "/organizations/map",
+    icon: GitBranch,
+    surfaceClass: "shell-workflow-map",
+    iconWrap: "bg-violet-100 text-violet-900 ring-violet-200/60 dark:bg-violet-950/60 dark:text-violet-200 dark:ring-violet-800/40",
+    linkClass: "text-violet-800 dark:text-violet-300",
+    label: "Open org map",
   },
   {
     title: "Manage organizations",
@@ -36,6 +75,16 @@ const workflowSteps = [
     iconWrap: "bg-violet-100 text-violet-900 ring-violet-200/60 dark:bg-violet-950/60 dark:text-violet-200 dark:ring-violet-800/40",
     linkClass: "text-violet-800 dark:text-violet-300",
     label: "Open organizations",
+  },
+  {
+    title: "Agent mode",
+    description: "Multi-step AI pipeline in chat — toggle Agent in the composer for structured reasoning.",
+    href: "/chat",
+    icon: Sparkles,
+    surfaceClass: "shell-workflow-agent",
+    iconWrap: "bg-indigo-100 text-indigo-900 ring-indigo-200/60 dark:bg-indigo-950/60 dark:text-indigo-200 dark:ring-indigo-800/40",
+    linkClass: "text-indigo-800 dark:text-indigo-300",
+    label: "Try agent mode",
   },
 ] as const;
 
